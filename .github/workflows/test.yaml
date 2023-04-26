@@ -1,0 +1,34 @@
+name: Test
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+concurrency:
+  # Concurrency group that uses the workflow name and PR number if available
+  # or commit SHA as a fallback. If a new build is triggered under that
+  # concurrency group while a previous build is running it will be canceled.
+  # Repeated pushes to a PR will cancel all previous builds, while multiple
+  # merges to main will not cancel.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  all:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        run: |
+          if [[ "${OSTYPE}" == "linux-gnu"* ]]; then
+            ./tests/linux-matrix-all.sh
+          elif [[ "${OSTYPE}" == "darwin"* ]]; then
+            ./tests/all-tests.sh
+          elif [[ "${OSTYPE}" == "msys"* ]]; then
+            ./tests/all-tests.sh
+          fi
+        shell: bash
